@@ -1,0 +1,90 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: laberintosix
+# "service" is the name of this project. This will also be added to your AWS resource names.
+service: api-nest-alumnos
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  region: sa-east-1
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Scan
+        - dynamodb:CreateTable
+        - dynamodb:UpdateTable
+        - dynamodb:DeleteTable
+        - dynamodb:DescribeTable
+        - dynamodb:ListTables
+      Resource: 'arn:aws:dynamodb:sa-east-1:058264094022:table/Alumnos'
+functions:
+  createAlumno:
+    handler: dist/main.handler
+    events:
+      - http:
+          path: alumnos
+          method: post
+  getAlumnos:
+    handler: dist/main.handler
+    events:
+      - http:
+          path: alumnos
+          method: get
+  getAlumnoById:
+    handler: dist/main.handler
+    events:
+      - http:
+          path: alumnos/{id}
+          method: get
+  updateAlumno:
+    handler: dist/main.handler
+    events:
+      - http:
+          path: alumnos/{id}
+          method: put
+  deleteAlumno:
+    handler: dist/main.handler
+    events:
+      - http:
+          path: alumnos/{id}
+          method: delete
+plugins:
+  - serverless-offline
+  - serverless-dynamodb-local
+  - serverless-plugin-include-dependencies
+  - serverless-auto-swagger
+custom:
+  autoswagger:
+    title: 'api-nest-alumnos'
+    apiType: 'http'
+    apiKeyHeaders: ['api-key']
+  dynamodb:
+    stages:
+      - dev
+    start:
+      port: 8000
+      inMemory: true
+      heapInitial: 200m
+      heapMax: 1g
+      migrate: true
+      seed: true
+    webpack:
+    webpackConfig: ./webpack.config.js
+    includeModules: true
+resources:
+  Resources:
+    AlumnosTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: Alumnos
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 1
+          WriteCapacityUnits: 1
+package:
+  excludeDevDependencies: false
