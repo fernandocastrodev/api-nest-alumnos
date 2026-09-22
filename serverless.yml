@@ -1,22 +1,23 @@
-# "org" ensures this Service is used with the correct Serverless Framework Access Key.
-org: laberintosix
-# "service" is the name of this project. This will also be added to your AWS resource names.
 service: api-nest-alumnos
+useDotenv: true
 
 provider:
   name: aws
   runtime: nodejs20.x
   region: sa-east-1
+  environment:
+    API_KEY: ${env:API_KEY}
+    DYNAMODB_TABLE: ${self:custom.tableName}
+    CORS_ORIGIN: ${env:CORS_ORIGIN, ''}
   iamRoleStatements:
     - Effect: Allow
       Action:
         - dynamodb:Scan
-        - dynamodb:CreateTable
-        - dynamodb:UpdateTable
-        - dynamodb:DeleteTable
-        - dynamodb:DescribeTable
-        - dynamodb:ListTables
-      Resource: 'arn:aws:dynamodb:sa-east-1:058264094022:table/Alumnos'
+        - dynamodb:PutItem
+        - dynamodb:GetItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource: !GetAtt AlumnosTable.Arn
 functions:
   createAlumno:
     handler: dist/main.handler
@@ -49,11 +50,11 @@ functions:
           path: alumnos/{id}
           method: delete
 plugins:
-  - serverless-offline
   - serverless-dynamodb-local
   - serverless-plugin-include-dependencies
   - serverless-auto-swagger
 custom:
+  tableName: ${env:DYNAMODB_TABLE, 'Alumnos'}
   autoswagger:
     title: 'api-nest-alumnos'
     apiType: 'http'
@@ -68,15 +69,12 @@ custom:
       heapMax: 1g
       migrate: true
       seed: true
-    webpack:
-    webpackConfig: ./webpack.config.js
-    includeModules: true
 resources:
   Resources:
     AlumnosTable:
       Type: AWS::DynamoDB::Table
       Properties:
-        TableName: Alumnos
+        TableName: ${self:custom.tableName}
         AttributeDefinitions:
           - AttributeName: id
             AttributeType: S

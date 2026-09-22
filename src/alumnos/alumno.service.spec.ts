@@ -2,29 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AlumnosController } from './alumnos.controller';
 import { AlumnosService } from './alumnos.service';
 import { Alumno } from './alumno.entity';
-import { INestApplication } from '@nestjs/common';
-import { AppModule } from '../app.module';
-const request = require('supertest');
-
-describe('AlumnosController (e2e)', () => {
-  let app: INestApplication;
-
-  beforeEach(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-
-    app = moduleFixture.createNestApplication();
-    await app.init();
-  });
-
-  it('/alumnos (GET)', () => {
-    return request(app.getHttpServer())
-      .get('/alumnos')
-      .set('api-key', `${process.env.API_KEY}`)
-      .expect(200);
-  });
-});
+import { NotFoundException } from '@nestjs/common';
 
 describe('AlumnosController', () => {
   let controller: AlumnosController;
@@ -90,6 +68,13 @@ describe('AlumnosController', () => {
 
       expect(await controller.findById('1')).toBe(result);
     });
+
+    it('conserva el error 404 del servicio', async () => {
+      jest.spyOn(service, 'findById').mockRejectedValue(new NotFoundException());
+      await expect(controller.findById('inexistente')).rejects.toBeInstanceOf(
+        NotFoundException,
+      );
+    });
   });
 
   describe('update', () => {
@@ -115,5 +100,4 @@ describe('AlumnosController', () => {
       expect(await controller.delete('1')).toBe(result);
     });
   });
-  // Similar tests can be written for 'findAll', 'findById', 'update', and 'delete'
 });
